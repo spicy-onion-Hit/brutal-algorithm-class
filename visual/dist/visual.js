@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { chan, select } from './csp.js';
+import { chan, select } from 'https://creatcodebuild.github.io/csp/dist/csp.js';
+import { WebSocketClient, GraphQLSubscription } from './client.js';
 function SortVisualizationComponent(id, arrays) {
     let ele = document.getElementById(id);
     let stop = chan();
@@ -26,7 +27,9 @@ function SortVisualizationComponent(id, arrays) {
 function CreateArrayAnimationSVGComponent(parent, id, x, y) {
     let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.id = id;
-    parent.insertBefore(svg, parent.firstChild);
+    let div = document.createElement('div');
+    div.appendChild(svg);
+    parent.insertBefore(div, parent.firstChild);
     return async (arrays, stop, resume) => {
         let waitToResume = await needToStop(stop, resume);
         for await (let array of arrays) {
@@ -38,7 +41,7 @@ function CreateArrayAnimationSVGComponent(parent, id, x, y) {
                 let r = rect(x + Number(i) * 4, y, 3, number);
                 svg.appendChild(r);
             }
-            await sleep(20);
+            await sleep(300);
         }
     };
     function rect(x, y, width, height) {
@@ -52,67 +55,6 @@ function CreateArrayAnimationSVGComponent(parent, id, x, y) {
         rect.setAttribute('x', x);
         rect.setAttribute('y', y);
         // rect.classList.add(className);
-        return rect;
-    }
-}
-async function paintArray(svg, document, initData, insertionArray, mergeArray, stop, resume) {
-    console.log('render loop');
-    // arrayAnimator(insertionArray, 'insert', 0, 0)
-    animatorMergeSort(mergeArray, 'merge', 0, 60);
-    let unblock = chan();
-    unblock.close();
-    async function arrayAnimator(events, className, x, y) {
-        let stopped = false;
-        let stopResume = await needToStop(stop, resume);
-        for await (let event of events) {
-            await stopResume.pop();
-            clearClass(className);
-            for (let [i, number] of Object.entries(event)) {
-                let r = rect(className, x + Number(i) * 4, y, 3, number);
-                svg.appendChild(r);
-            }
-            await sleep(20);
-        }
-    }
-    async function animatorMergeSort(events, className, x, y) {
-        let numebrsToRender = initData.map((x) => x);
-        for await (let [numbers, startIndex] of events) {
-            // if (needToStop(stop)) {
-            //     break;
-            // }
-            let children = svg.childNodes;
-            clearClass(className);
-            // put current numbers into previousNumbers
-            for (let i = 0; i < numbers.length; i++) {
-                numebrsToRender[i + startIndex] = numbers[i];
-            }
-            for (let [i, number] of Object.entries(numebrsToRender)) {
-                let r = rect(className, x + Number(i) * 4, y, 3, number);
-                svg.appendChild(r);
-            }
-            await sleep(3);
-        }
-    }
-    function empty(ele) {
-        ele.textContent = undefined;
-    }
-    function clearClass(name) {
-        var paras = document.getElementsByClassName(name);
-        while (paras[0]) {
-            paras[0].parentNode.removeChild(paras[0]);
-        }
-    }
-    function rect(className, x, y, width, height) {
-        // https://developer.mozilla.org/en-US/docs/Web/API/Document/createElementNS
-        // https://stackoverflow.com/questions/12786797/draw-rectangles-dynamically-in-svg
-        let rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('width', width);
-        // @ts-ignore
-        rect.setAttribute('height', height);
-        // @ts-ignore
-        rect.setAttribute('x', x);
-        rect.setAttribute('y', y);
-        rect.classList.add(className);
         return rect;
     }
 }
@@ -232,7 +174,7 @@ async function main() {
             await c.put(numebrsToRender);
             while (1) {
                 let [numbers, startIndex] = await mergeQueue.pop();
-                console.log(numbers);
+                // console.log(numbers);
                 for (let i = 0; i < numbers.length; i++) {
                     numebrsToRender[i + startIndex] = numbers[i];
                 }
@@ -244,6 +186,23 @@ async function main() {
     console.log(mergeQueue2);
     SortVisualizationComponent('insertion-sort', insertQueue);
     SortVisualizationComponent('merge-sort', mergeQueue2);
+    let client = await WebSocketClient('ws://localhost:8081');
+    let client2 = await WebSocketClient('ws://localhost:8081');
+    // let i = 0;
+    // while(++i) {
+    //     await sleep(500);
+    //     await client.put(i);
+    //     // Nice, now I have seletable web socket connections
+    //     // Now just need to implement a shuffle algorithm for selection fairness
+    //     let x = await client.pop();
+    //     console.log('pop', x);
+    // }
+    let subscription = await GraphQLSubscription(`subscription {hello}`, client);
+    while (i) {
+        console.log(1, await subscription.pop());
+        console.log(2, await subscription2.pop());
+        let subscription2 = await GraphQLSubscription(`mutation { hello(text: "${i}") }`, client2);
+    }
 }
 main();
 async function needToStop(stop, resume) {

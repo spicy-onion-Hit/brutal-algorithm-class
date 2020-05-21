@@ -1,9 +1,42 @@
 // Create WebSocket connection.
+// @ts-ignore
+import { chan, SelectableChannel } from "https://creatcodebuild.github.io/graphql-projects/csp/dist/es/csp.js";
 
-import { chan } from "./csp.js";
 
+class WC<T> implements SelectableChannel<T> {
 
-export async function WebSocketClient(url: string) {
+    constructor(
+        private receive: SelectableChannel<T>, 
+        private readyChan: SelectableChannel<T>,
+        private socket: WebSocket) {
+
+    }
+
+    async put(ele: T): Promise<void> {
+        return this.socket.send(`${ele}`);
+    }
+    pop(): Promise<T> {
+        return this.receive.pop()
+    }
+    close() {
+        this.socket.close();
+    }
+    closed(): boolean {
+        return this.socket.readyState === this.socket.CLOSED;
+    }
+    async ready(i: number): Promise<number> {
+        if(this.closed()) {
+            return i;
+        }
+        await this.readyChan.pop()
+        return i;
+    }
+    // [Symbol.asyncIterator]() {
+    //     return this;
+    // }
+}
+
+export async function WebSocketClient(url: string): Promise<WC<any>> {
 
     const socket = new WebSocket(url);
     await new Promise((resolve) => {
@@ -13,16 +46,27 @@ export async function WebSocketClient(url: string) {
         }
     });
     let receive = chan();
+    let ready = chan();
     socket.addEventListener('message', async function (event) {
+        ready.put(null);
+        console.log('on message', event);
         await receive.put(event.data);
     });
+    return new WC(receive, ready, socket);
+}
 
-    return {
-        send(data) {
-            socket.send(data);
-        },
-        receive: async ()=> {
-            return await receive.pop();
-        }
+export class GraphQLSubscriptionClient implements SelectableChannel {
+
+    constructor(private webSocketClient: WC<string>) {}
+
+    async pop() {
+        return this.webSocketClient.pop()
     }
+
+}
+
+
+export async function GraphQLSubscription(document: string, webSocketClient: WC<string>): Promise<GraphQLSubscriptionClient> {
+    await webSocketClient.put(document);
+    return new GraphQLSubscriptionClient(webSocketClient);
 }

@@ -6,6 +6,9 @@
 
 想报名的同学加 QQ 群：538935270 或者我QQ：1070494510
 
+## 算法可视化游乐场 Algorithm Playground
+https://creatcodebuild.github.io/brutal-algorithm-class/visual/visual.html
+
 ## 课程大纲
 本课程5月19日（周二）开课，一共2个月（8周）24节直播课，每节课 80 分钟。课程还包括与老师的 __一对一辅导__ 课。
 
