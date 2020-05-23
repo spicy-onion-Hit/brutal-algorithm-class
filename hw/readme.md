@@ -10,15 +10,23 @@ function Product(M1: Matrix<W, H1>， M2: Matrix<H2, W>): Matrix<W, W>
 ```
 `Matrix`类型的实现可以自定义，通常是二维数组。
 
-```
-[[1, 2, 3]
- [4, 5, 6]]
-3 x 2 // Width = 3, Height = 2
+```js
+M1 = [
+    [1, 2, 3]
+    [4, 5, 6]]
+// 3 x 2 // Width = 3, Height = 2
 
-[[1,2]
- [3,4]
- [5,6]]
-2 x 3 // Width =
+M2 = [
+    [1,2]
+    [3,4]
+    [5,6]]
+// 2 x 3 // Width =
+
+// Test
+equal(Product(M1, M2), [
+    [22, 26],
+    [? , ?]
+]) // print true
 ```
 
 ## 2. Shuffle 洗牌
@@ -27,9 +35,11 @@ function Product(M1: Matrix<W, H1>， M2: Matrix<H2, W>): Matrix<W, W>
 实现完成之后，请分析或者统计算法的随机分布以及标准差。分析可以写成注释。
 
 ## 3. 链表（附加题）
-请使用递归的方式实现链表。
+请使用递归的方式实现头尾指针链表。
 ```ts
 interface LinkedList {
+    head: Node
+    tail: Node
     length(): number        // 得到链表长度
     append(element)         // 在链表末尾追加元素
     append_head(element)    // 在链表头部追加元素
@@ -37,6 +47,11 @@ interface LinkedList {
                             // insert(element, 0) 等于 append_head(element)
                             // insert(element, length()) 等于 append(element)
     get(index)              // 得到 index 位的元素
+}
+
+interface Node<T> {
+    element: T
+    next: Node<T> | null
 }
 ```
 
